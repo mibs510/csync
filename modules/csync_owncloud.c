@@ -624,7 +624,7 @@ static int fetch_resource_list( const char *uri,
 
   curi = _cleanPath( uri );
 
-  if (!fetchCtx) {
+  if (!curi) {
     errno = ENOMEM;
     SAFE_FREE(curi);
     return -1;
@@ -814,6 +814,12 @@ static int owncloud_stat(const char *uri, csync_vio_file_stat_t *buf) {
         }
 
         curi = _cleanPath( uri );
+        if ( ! curi) {
+            DEBUG_WEBDAV("Could not extract path from %s.\n", curi );
+            errno = ENOENT;
+            SAFE_FREE(fetchCtx);
+            return -1;
+        }
 
         DEBUG_WEBDAV("I have no stat cache, call propfind for %s.", curi );
         fetchCtx->list = NULL;
@@ -1333,6 +1339,12 @@ static csync_vio_method_handle_t *owncloud_opendir(const char *uri) {
 
     DEBUG_WEBDAV("opendir method called on %s", uri );
 
+    if ( ! curi ) {
+        DEBUG_WEBDAV("Failed to clean path for %s\n", uri );
+        errno = ENOENT;
+        return NULL;
+    }
+
     dav_connect( uri );
 
     fetchCtx = c_malloc( sizeof( struct listdir_context ));
@@ -1448,6 +1460,12 @@ static int owncloud_rmdir(const char *uri) {
     int rc = NE_OK;
     char* curi = _cleanPath( uri );
 
+    if ( ! curi) {
+        DEBUG_WEBDAV("Could not extract path from %s.\n", curi );
+        errno = ENOENT;
+        return -1;
+    }
+
     rc = dav_connect(uri);
     if (rc < 0) {
         errno = EINVAL;
@@ -1481,6 +1499,16 @@ static int owncloud_rename(const char *olduri, const char *newuri) {
     src    = _cleanPath( olduri );
     target = _cleanPath( newuri );
 
+    if ( ! src ) {
+        DEBUG_WEBDAV("Could not extract path from %s.\n", olduri );
+        errno = ENOENT;
+        rc = NE_ERROR;
+    }
+    if ( ! target ) {
+        DEBUG_WEBDAV("Could not extract path from %s.\n", newuri );
+        errno = ENOENT;
+        rc = NE_ERROR;
+    }
     if( rc >= 0 ) {
         DEBUG_WEBDAV("MOVE: %s => %s: %d", src, target, rc );
         rc = ne_move(dav_session.ctx, 1, src, target );
@@ -1569,7 +1597,7 @@ static int owncloud_utimes(const char *uri, const struct timeval *times) {
 
     curi = _cleanPath( uri );
 
-    if( ! uri ) {
+    if( ! curi ) {
         errno = ENOENT;
         return -1;
     }
