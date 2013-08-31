@@ -314,7 +314,8 @@ static char *_cleanPath( const char* uri ) {
         DEBUG_WEBDAV("Unable to cleanPath %s", uri ? uri: "<zero>" );
         re = NULL;
     } else {
-        re = ne_path_escape( path );
+        if (path)
+            re = ne_path_escape( path );
     }
 
     SAFE_FREE( path );
