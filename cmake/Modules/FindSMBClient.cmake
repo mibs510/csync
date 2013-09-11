@@ -13,54 +13,40 @@
 #  For details see the accompanying COPYING-CMAKE-SCRIPTS file.
 #
 
+find_package(PkgConfig)
+if (PKG_CONFIG_FOUND)
+  pkg_check_modules(_SMBCLIENT smbclient)
+endif (PKG_CONFIG_FOUND)
 
-if (SMBCLIENT_LIBRARIES AND SMBCLIENT_INCLUDE_DIRS)
-  # in cache already
-  set(SMBCLIENT_FOUND TRUE)
-else (SMBCLIENT_LIBRARIES AND SMBCLIENT_INCLUDE_DIRS)
-  find_package(PkgConfig)
-  if (PKG_CONFIG_FOUND)
-    pkg_check_modules(_SMBCLIENT smbclient)
-  endif (PKG_CONFIG_FOUND)
+find_path(SMBCLIENT_INCLUDE_DIR
+  NAMES
+    libsmbclient.h
+  PATHS
+    ${_SMBCLIENT_INCLUDEDIR}
+  PATH_SUFFIXES
+    samba-4.0
+)
 
-  find_path(SMBCLIENT_INCLUDE_DIR
-    NAMES
-      libsmbclient.h
-    PATHS
-      ${_SMBCLIENT_INCLUDEDIR}
-      /usr/include
-      /usr/local/include
-      /opt/local/include
-      /sw/include
+find_library(SMBCLIENT_LIBRARY
+  NAMES
+    smbclient
+  PATHS
+    ${_SMBCLIENT_LIBDIR}
+)
+
+set(SMBCLIENT_INCLUDE_DIRS
+  ${SMBCLIENT_INCLUDE_DIR}
+)
+
+if (SMBCLIENT_LIBRARY)
+  set(SMBCLIENT_LIBRARIES
+      ${SMBCLIENT_LIBRARIES}
+      ${SMBCLIENT_LIBRARY}
   )
+endif (SMBCLIENT_LIBRARY)
 
-  find_library(SMBCLIENT_LIBRARY
-    NAMES
-      smbclient
-    PATHS
-      ${_SMBCLIENT_LIBDIR}
-      /usr/lib
-      /usr/local/lib
-      /opt/local/lib
-      /sw/lib
-  )
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(SMBClient DEFAULT_MSG SMBCLIENT_LIBRARIES SMBCLIENT_INCLUDE_DIRS)
 
-  set(SMBCLIENT_INCLUDE_DIRS
-    ${SMBCLIENT_INCLUDE_DIR}
-  )
-
-  if (SMBCLIENT_LIBRARY)
-    set(SMBCLIENT_LIBRARIES
-        ${SMBCLIENT_LIBRARIES}
-        ${SMBCLIENT_LIBRARY}
-    )
-  endif (SMBCLIENT_LIBRARY)
-
-  include(FindPackageHandleStandardArgs)
-  find_package_handle_standard_args(SMBClient DEFAULT_MSG SMBCLIENT_LIBRARIES SMBCLIENT_INCLUDE_DIRS)
-
-  # show the SMBCLIENT_INCLUDE_DIRS and SMBCLIENT_LIBRARIES variables only in the advanced view
-  mark_as_advanced(SMBCLIENT_INCLUDE_DIRS SMBCLIENT_LIBRARIES)
-
-endif (SMBCLIENT_LIBRARIES AND SMBCLIENT_INCLUDE_DIRS)
-
+# show the SMBCLIENT_INCLUDE_DIRS and SMBCLIENT_LIBRARIES variables only in the advanced view
+mark_as_advanced(SMBCLIENT_INCLUDE_DIRS SMBCLIENT_LIBRARIES)
