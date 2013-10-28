@@ -555,13 +555,10 @@ static char *sftp_connect_uri(const char *uri)
 
 static csync_vio_method_handle_t *_sftp_open(const char *uri, int flags, mode_t mode) {
   csync_vio_method_handle_t *mh = NULL;
-  char *path = NULL;
+  char *path;
 
-  if (_sftp_connect(uri) < 0) {
-    return NULL;
-  }
-
-  if (c_parse_uri(uri, NULL, NULL, NULL, NULL, NULL, &path) < 0) {
+  path = sftp_connect_uri(uri);
+  if (path == NULL) {
     return NULL;
   }
 
@@ -576,13 +573,10 @@ static csync_vio_method_handle_t *_sftp_open(const char *uri, int flags, mode_t 
 
 static csync_vio_method_handle_t *_sftp_creat(const char *uri, mode_t mode) {
   csync_vio_method_handle_t *mh = NULL;
-  char *path = NULL;
+  char *path;
 
-  if (_sftp_connect(uri) < 0) {
-    return NULL;
-  }
-
-  if (c_parse_uri(uri, NULL, NULL, NULL, NULL, NULL, &path) < 0) {
+  path = sftp_connect_uri(uri);
+  if (path == NULL) {
     return NULL;
   }
 
@@ -641,13 +635,10 @@ static off_t _sftp_lseek(csync_vio_method_handle_t *fhandle, off_t offset, int w
 
 static csync_vio_method_handle_t *_sftp_opendir(const char *uri) {
   csync_vio_method_handle_t *mh = NULL;
-  char *path = NULL;
+  char *path;
 
-  if (_sftp_connect(uri) < 0) {
-    return NULL;
-  }
-
-  if (c_parse_uri(uri, NULL, NULL, NULL, NULL, NULL, &path) < 0) {
+  path = sftp_connect_uri(uri);
+  if (path == NULL) {
     return NULL;
   }
 
@@ -711,14 +702,11 @@ static csync_vio_file_stat_t *_sftp_readdir(csync_vio_method_handle_t *dhandle) 
 }
 
 static int _sftp_mkdir(const char *uri, mode_t mode) {
-  char *path = NULL;
-  int rc = -1;
+  char *path;
+  int rc;
 
-  if (_sftp_connect(uri) < 0) {
-    return -1;
-  }
-
-  if (c_parse_uri(uri, NULL, NULL, NULL, NULL, NULL, &path) < 0) {
+  path = sftp_connect_uri(uri);
+  if (path == NULL) {
     return -1;
   }
 
@@ -732,14 +720,11 @@ static int _sftp_mkdir(const char *uri, mode_t mode) {
 }
 
 static int _sftp_rmdir(const char *uri) {
-  char *path = NULL;
-  int rc = -1;
+  char *path;
+  int rc;
 
-  if (_sftp_connect(uri) < 0) {
-    return -1;
-  }
-
-  if (c_parse_uri(uri, NULL, NULL, NULL, NULL, NULL, &path) < 0) {
+  path = sftp_connect_uri(uri);
+  if (path == NULL) {
     return -1;
   }
 
@@ -754,20 +739,16 @@ static int _sftp_rmdir(const char *uri) {
 
 static int _sftp_stat(const char *uri, csync_vio_file_stat_t *buf) {
   sftp_attributes attrs;
-  char *path = NULL;
+  char *path;
   int rc = -1;
 
-  if (_sftp_connect(uri) < 0) {
-    return -1;
-  }
-
-  if (c_parse_uri(uri, NULL, NULL, NULL, NULL, NULL, &path) < 0) {
+  path = sftp_connect_uri(uri);
+  if (path == NULL) {
     return -1;
   }
 
   attrs = sftp_lstat(_sftp_session, path);
   if (attrs == NULL) {
-    rc = -1;
     goto out;
   }
 
@@ -837,21 +818,23 @@ out:
 
 static int _sftp_rename(const char *olduri, const char *newuri) {
   char *oldpath = NULL;
-  char *newpath = NULL;
+  char *tmp = NULL;
+  char *newpath;
   int rc = -1;
 
-  if (_sftp_connect(olduri) < 0) {
+  oldpath = sftp_connect_uri(olduri);
+  if (oldpath == NULL) {
     return -1;
   }
 
-  if (c_parse_uri(olduri, NULL, NULL, NULL, NULL, NULL, &oldpath) < 0) {
-    rc = -1;
+  if (c_parse_uri(newuri, NULL, NULL, NULL, NULL, NULL, &tmp) < 0) {
     goto out;
   }
 
-  if (c_parse_uri(newuri, NULL, NULL, NULL, NULL, NULL, &newpath) < 0) {
-    rc = -1;
-    goto out;
+  newpath = sftp_canonicalize_path(_sftp_session, tmp);
+  SAFE_FREE(tmp);
+  if (newpath == NULL) {
+      goto out;
   }
 
   /* FIXME: workaround cause, sftp_rename can't overwrite */
@@ -869,14 +852,11 @@ out:
 }
 
 static int _sftp_unlink(const char *uri) {
-  char *path = NULL;
-  int rc = -1;
+  char *path;
+  int rc;
 
-  if (_sftp_connect(uri) < 0) {
-    return -1;
-  }
-
-  if (c_parse_uri(uri, NULL, NULL, NULL, NULL, NULL, &path) < 0) {
+  path = sftp_connect_uri(uri);
+  if (path == NULL) {
     return -1;
   }
 
@@ -891,14 +871,11 @@ static int _sftp_unlink(const char *uri) {
 
 static int _sftp_chmod(const char *uri, mode_t mode) {
   struct sftp_attributes_struct attrs;
-  char *path = NULL;
-  int rc = -1;
+  char *path;
+  int rc;
 
-  if (_sftp_connect(uri) < 0) {
-    return -1;
-  }
-
-  if (c_parse_uri(uri, NULL, NULL, NULL, NULL, NULL, &path) < 0) {
+  path = sftp_connect_uri(uri);
+  if (path == NULL) {
     return -1;
   }
 
@@ -917,14 +894,11 @@ static int _sftp_chmod(const char *uri, mode_t mode) {
 
 static int _sftp_chown(const char *uri, uid_t owner, gid_t group) {
   struct sftp_attributes_struct attrs;
-  char *path = NULL;
-  int rc = -1;
+  char *path;
+  int rc;
 
-  if (_sftp_connect(uri) < 0) {
-    return -1;
-  }
-
-  if (c_parse_uri(uri, NULL, NULL, NULL, NULL, NULL, &path) < 0) {
+  path = sftp_connect_uri(uri);
+  if (path == NULL) {
     return -1;
   }
 
@@ -944,14 +918,11 @@ static int _sftp_chown(const char *uri, uid_t owner, gid_t group) {
 
 static int _sftp_utimes(const char *uri, const struct timeval *times) {
   struct sftp_attributes_struct attrs;
-  char *path = NULL;
-  int rc = -1;
+  char *path;
+  int rc;
 
-  if (_sftp_connect(uri) < 0) {
-    return -1;
-  }
-
-  if (c_parse_uri(uri, NULL, NULL, NULL, NULL, NULL, &path) < 0) {
+  path = sftp_connect_uri(uri);
+  if (path == NULL) {
     return -1;
   }
 
