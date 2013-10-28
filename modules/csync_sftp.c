@@ -154,7 +154,6 @@ static int _sftp_connect(const char *uri) {
   char *passwd = NULL;
   char *host = NULL;
   unsigned int port = 0;
-  char *path = NULL;
   unsigned char *hash = NULL;
   int hlen;
   int rc = -1;
@@ -167,7 +166,7 @@ static int _sftp_connect(const char *uri) {
     return 0;
   }
 
-  rc = c_parse_uri(uri, &scheme, &user, &passwd, &host, &port, &path);
+  rc = c_parse_uri(uri, &scheme, &user, &passwd, &host, &port, NULL);
   if (rc < 0) {
     goto out;
   }
@@ -523,7 +522,6 @@ out:
   SAFE_FREE(user);
   SAFE_FREE(passwd);
   SAFE_FREE(host);
-  SAFE_FREE(path);
   SAFE_FREE(hash);
 
   return rc;
