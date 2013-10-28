@@ -527,6 +527,28 @@ out:
   return rc;
 }
 
+static char *sftp_connect_uri(const char *uri)
+{
+  char *tmp = NULL;
+  char *path;
+  int rc;
+
+  rc = _sftp_connect(uri);
+  if (rc < 0) {
+      return NULL;
+  }
+
+  rc = c_parse_uri(uri, NULL, NULL, NULL, NULL, NULL, &tmp);
+  if (rc < 0) {
+      return NULL;
+  }
+
+  path = sftp_canonicalize_path(_sftp_session, tmp);
+  SAFE_FREE(tmp);
+
+  return path;
+}
+
 /*
  * file functions
  */
@@ -1010,5 +1032,3 @@ void vio_module_shutdown(csync_vio_method_t *method) {
 
   ssh_finalize();
 }
-
-/* vim: set ts=8 sw=2 et cindent: */
