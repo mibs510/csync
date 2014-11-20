@@ -22,11 +22,12 @@ set(CSYNC_LIBRARY
 )
 
 set(CSYNC_LINK_LIBRARIES
-  ${CSYNC_LIBRARY}
   ${CSTDLIB_LIBRARY}
   ${CSYNC_REQUIRED_LIBRARIES}
   ${SQLITE3_LIBRARIES}
 )
+
+
 
 if(HAVE_ICONV AND WITH_ICONV)
     list(APPEND CSYNC_PRIVATE_INCLUDE_DIRS ${ICONV_INCLUDE_DIR})
@@ -71,9 +72,15 @@ include_directories(
   ${CSYNC_PRIVATE_INCLUDE_DIRS}
 )
 
-add_library(${CSYNC_LIBRARY} SHARED ${csync_SRCS})
 
-target_link_libraries(${CSYNC_LINK_LIBRARIES})
+if ( WITH_STATIC_LIB )
+  add_library(${CSYNC_LIBRARY}_static STATIC ${csync_SRCS})
+  target_link_libraries(${CSYNC_LIBRARY}_static ${CSYNC_LINK_LIBRARIES})
+endif ( WITH_STATIC_LIB )
+
+
+add_library(${CSYNC_LIBRARY} SHARED ${csync_SRCS})
+target_link_libraries(${CSYNC_LIBRARY} ${CSYNC_LINK_LIBRARIES})
 
 set_target_properties(
   ${CSYNC_LIBRARY}
