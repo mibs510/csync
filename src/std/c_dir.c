@@ -35,18 +35,26 @@
 int c_mkdirs(const char *path, mode_t mode) {
   int tmp;
   csync_stat_t sb;
-  mbchar_t *wpath = c_utf8_to_locale(path);
+  mbchar_t *wpath;
   mbchar_t *swpath = NULL;
+  int rc;
 
   if (path == NULL) {
     errno = EINVAL;
     return -1;
   }
 
-  if (_tstat(wpath, &sb) == 0) {
+  wpath = c_utf8_to_locale(path);
+  if (wpath == NULL) {
+      errno = ENOMEM;
+      return -1;
+  }
+
+  rc = _tstat(wpath, &sb);
+  if (rc == 0) {
     if (! S_ISDIR(sb.st_mode)) {
-      errno = ENOTDIR;
       c_free_locale_string(wpath);
+      errno = ENOTDIR;
       return -1;
     }
   }
@@ -60,27 +68,32 @@ int c_mkdirs(const char *path, mode_t mode) {
     char subpath[tmp + 1];
     memcpy(subpath, path, tmp);
     subpath[tmp] = '\0';
+
     swpath = c_utf8_to_locale(subpath);
-    if (_tstat(swpath, &sb) == 0) {
-      if (! S_ISDIR(sb.st_mode)) {
-	c_free_locale_string(swpath);
-	c_free_locale_string(wpath);
-        errno = ENOTDIR;
+    if (swpath == NULL) {
+        c_free_locale_string(wpath);
+        errno = ENOMEM;
         return -1;
+    }
+    rc = _tstat(swpath, &sb);
+    c_free_locale_string(swpath);
+    if (rc == 0) {
+      if (! S_ISDIR(sb.st_mode)) {
+          c_free_locale_string(wpath);
+          errno = ENOTDIR;
+          return -1;
       }
     } else if (errno != ENOENT) {
       c_free_locale_string(wpath);
-      c_free_locale_string(swpath);
       return -1;
     } else if (c_mkdirs(subpath, mode) < 0) {
-      c_free_locale_string(swpath);
       c_free_locale_string(wpath);
       return -1;
     }
   }
-  tmp = _tmkdir(wpath, mode);
-  c_free_locale_string(swpath);
   c_free_locale_string(wpath);
+
+  tmp = _tmkdir(wpath, mode);
 
   if ((tmp < 0) && (errno == EEXIST)) {
     return 0;
