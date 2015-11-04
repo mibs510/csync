@@ -104,7 +104,7 @@ void csync_log(int verbosity,
                const char *function,
                const char *format, ...)
 {
-    char buffer[1024];
+    char buffer[1024] = { 0 };
     va_list va;
 
     if (verbosity <= csync_get_log_level()) {
