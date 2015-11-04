@@ -170,15 +170,20 @@ static pid_t _csync_lock_read(const char *lockfile) {
   if (kill(pid, 0) < 0 && errno == ESRCH) {
     /* Process is dead. Remove stale lock. */
     wlockfile = c_utf8_to_locale(lockfile);
+    if (wlockfile == NULL) {
+        return -1;
+    }
 
-    if (_tunlink(wlockfile) < 0) {
+    rc = _tunlink(wlockfile);
+    c_free_locale_string(wlockfile);
+    if (rc < 0) {
       strerror_r(errno, errbuf, sizeof(errbuf));
       CSYNC_LOG(CSYNC_LOG_PRIORITY_ERROR,
                 "Unable to remove stale lock %s - %s",
                 lockfile,
                 errbuf);
     }
-    c_free_locale_string(wlockfile);
+
     return -1;
   }
 
