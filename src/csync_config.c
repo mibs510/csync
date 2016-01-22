@@ -20,6 +20,7 @@
 
 #include "config.h"
 
+#include <errno.h>
 #include <ctype.h>
 
 #include "c_lib.h"
@@ -161,13 +162,14 @@ out:
 }
 
 static int csync_config_get_int(char **str, int notfound) {
-    char *p, *endp;
+    char *endp;
     int i;
 
-    p = csync_config_get_token(str);
-    if (p && *p) {
-        i = strtol(p, &endp, 10);
-        if (p == endp) {
+    csync_config_get_token(str);
+    if (str != NULL && *str != NULL && **str != '\0') {
+        i = strtol(*str, &endp, 10);
+        if (*str == endp || errno == ERANGE) {
+            /* Nothing parsed */
             return notfound;
         }
         return i;
