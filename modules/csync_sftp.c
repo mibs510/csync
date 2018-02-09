@@ -282,6 +282,7 @@ static int _sftp_connect(const char *uri) {
   rc = ssh_get_publickey_hash(srv_pubkey,
                               SSH_PUBLICKEY_HASH_SHA1,
                               &hash, &hlen);
+  ssh_key_free(srv_pubkey);
   if (rc < 0) {
     fprintf(stderr, "csync_sftp - error connecting to the server: %s\n",
         ssh_get_error(_ssh_session));
@@ -536,7 +537,7 @@ out:
   SAFE_FREE(user);
   SAFE_FREE(passwd);
   SAFE_FREE(host);
-  SAFE_FREE(hash);
+  ssh_clean_pubkey_hash(&hash);
 
   return rc;
 }
