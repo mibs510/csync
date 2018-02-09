@@ -1,6 +1,6 @@
 project(modules C)
 
-find_package(LibSSH 0.4.0)
+find_package(libssh 0.7.4)
 find_package(Neon 0.29.0)
 
 set(PLUGIN_VERSION_INSTALL_DIR "${PLUGIN_INSTALL_DIR}-${LIBRARY_SOVERSION}")
@@ -49,17 +49,17 @@ endif(SMBCLIENT_LIBRARY)
 macro_add_plugin(csync_dummy csync_dummy.c)
 target_link_libraries(csync_dummy ${CSYNC_LIBRARY})
 
-if (LIBSSH_FOUND)
-macro_add_plugin(${SFTP_PLUGIN} csync_sftp.c)
-target_link_libraries(${SFTP_PLUGIN} ${CSYNC_LIBRARY} ${LIBSSH_LIBRARIES})
+if (LIBSSH_LIBRARY)
+    macro_add_plugin(${SFTP_PLUGIN} csync_sftp.c)
+    target_link_libraries(${SFTP_PLUGIN} ${CSYNC_LIBRARY} ${LIBSSH_LIBRARIES})
 
-install(
-  TARGETS
-    ${SFTP_PLUGIN}
-  DESTINATION
-    ${PLUGIN_VERSION_INSTALL_DIR}
-)
-endif (LIBSSH_FOUND)
+    install(
+        TARGETS
+        ${SFTP_PLUGIN}
+        DESTINATION
+        ${PLUGIN_VERSION_INSTALL_DIR}
+        )
+endif ()
 
 if (NEON_FOUND)
     macro_add_plugin(${OWNCLOUD_PLUGIN} csync_owncloud.c)
