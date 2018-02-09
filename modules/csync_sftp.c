@@ -156,13 +156,14 @@ static int _sftp_connect(const char *uri) {
   char *host = NULL;
   unsigned int port = 0;
   unsigned char *hash = NULL;
-  int hlen;
+  size_t hlen = 0;
   int rc = -1;
   int state = SSH_SERVER_ERROR;
   int timeout = 10;
   int method;
   char *verbosity;
   char errbuf[256] = {0};
+  ssh_key srv_pubkey;
 
   if (_connected) {
     return 0;
@@ -269,8 +270,19 @@ static int _sftp_connect(const char *uri) {
     goto out;
   }
 
-  hlen = ssh_get_pubkey_hash(_ssh_session, &hash);
-  if (hlen < 0) {
+  rc = ssh_get_publickey(_ssh_session, &srv_pubkey);
+  if (rc < 0) {
+    fprintf(stderr, "csync_sftp - error connecting to the server: %s\n", ssh_get_error(_ssh_session));
+    ssh_disconnect(_ssh_session);
+    _ssh_session = NULL;
+    ssh_finalize();
+    goto out;
+  }
+
+  rc = ssh_get_publickey_hash(srv_pubkey,
+                              SSH_PUBLICKEY_HASH_SHA1,
+                              &hash, &hlen);
+  if (rc < 0) {
     fprintf(stderr, "csync_sftp - error connecting to the server: %s\n",
         ssh_get_error(_ssh_session));
     ssh_disconnect(_ssh_session);
